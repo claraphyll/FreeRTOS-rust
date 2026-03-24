@@ -151,13 +151,13 @@ UBaseType_t freertos_rs_give_recursive_semaphore(SemaphoreHandle_t semaphore) {
 }
 #endif
 
+#if (configSUPPORT_DYNAMIC_ALLOCATION == 1)
 #if (configUSE_MUTEXES == 1)
 SemaphoreHandle_t freertos_rs_create_mutex() {
 	return xSemaphoreCreateMutex();
 }
-#endif
+#endif // configUSE_MUTEXES
 
-#if (configSUPPORT_DYNAMIC_ALLOCATION == 1)
 SemaphoreHandle_t freertos_rs_create_binary_semaphore() {
 	return xSemaphoreCreateBinary();
 }
