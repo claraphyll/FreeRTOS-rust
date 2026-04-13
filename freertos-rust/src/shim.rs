@@ -103,6 +103,41 @@ extern "C" {
         xHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
     ) -> FreeRtosBaseType;
 
+    pub fn freertos_rs_task_notify_indexed(
+        task: FreeRtosTaskHandle,
+        index: FreeRtosUBaseType,
+        value: u32,
+        action: u8,
+    ) -> FreeRtosBaseType;
+    pub fn freertos_rs_task_notify_indexed_isr(
+        task: FreeRtosTaskHandle,
+        index: FreeRtosUBaseType,
+        value: u32,
+        action: u8,
+        xHigherPriorityTaskWoken: FreeRtosBaseTypeMutPtr,
+    ) -> FreeRtosBaseType;
+    pub fn freertos_rs_task_notify_take_indexed(
+        index: FreeRtosUBaseType,
+        clear_count: u8,
+        wait: FreeRtosTickType,
+    ) -> u32;
+    pub fn freertos_rs_task_notify_wait_indexed(
+        index: FreeRtosUBaseType,
+        ulBitsToClearOnEntry: u32,
+        ulBitsToClearOnExit: u32,
+        pulNotificationValue: *mut u32,
+        xTicksToWait: FreeRtosTickType,
+    ) -> FreeRtosBaseType;
+    pub fn freertos_rs_task_notify_state_clear_indexed(
+        task: FreeRtosTaskHandle,
+        index: FreeRtosUBaseType,
+    ) -> FreeRtosBaseType;
+    pub fn freertos_rs_task_notify_value_clear_indexed(
+        task: FreeRtosTaskHandle,
+        index: FreeRtosUBaseType,
+        bits_to_clear: u32,
+    ) -> u32;
+
     pub fn freertos_rs_spawn_task(
         f: extern "C" fn(FreeRtosMutVoidPtr) -> FreeRtosMutVoidPtr,
         value: FreeRtosMutVoidPtr,

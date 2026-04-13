@@ -349,6 +349,48 @@ BaseType_t freertos_rs_task_notify_isr(void* task, uint32_t value, uint8_t actio
 	return 0;
 }
 
+/* Indexed task notification functions - require FreeRTOS >= 10.4.0 */
+
+BaseType_t freertos_rs_task_notify_indexed(void* task, UBaseType_t index, uint32_t value, uint8_t action) {
+	eNotifyAction eAction = freertos_rs_task_notify_action(action);
+
+	BaseType_t v = xTaskNotifyIndexed(task, index, value, eAction);
+	if (v != pdPASS) {
+		return 1;
+	}
+	return 0;
+}
+
+BaseType_t freertos_rs_task_notify_indexed_isr(void* task, UBaseType_t index, uint32_t value, uint8_t action, BaseType_t* xHigherPriorityTaskWoken) {
+	eNotifyAction eAction = freertos_rs_task_notify_action(action);
+
+	BaseType_t v = xTaskNotifyFromISRIndexed(task, index, value, eAction, xHigherPriorityTaskWoken);
+	if (v != pdPASS) {
+		return 1;
+	}
+	return 0;
+}
+
+uint32_t freertos_rs_task_notify_take_indexed(UBaseType_t index, uint8_t clear_count, TickType_t wait) {
+	return ulTaskNotifyTakeIndexed(index, clear_count == 1 ? pdTRUE : pdFALSE, wait);
+}
+
+BaseType_t freertos_rs_task_notify_wait_indexed(UBaseType_t index, uint32_t ulBitsToClearOnEntry, uint32_t ulBitsToClearOnExit, uint32_t *pulNotificationValue, TickType_t xTicksToWait) {
+	if (xTaskNotifyWaitIndexed(index, ulBitsToClearOnEntry, ulBitsToClearOnExit, pulNotificationValue, xTicksToWait) == pdTRUE) {
+		return 0;
+	}
+
+	return 1;
+}
+
+BaseType_t freertos_rs_task_notify_state_clear_indexed(void* task, UBaseType_t index) {
+	return xTaskNotifyStateClearIndexed(task, index);
+}
+
+uint32_t freertos_rs_task_notify_value_clear_indexed(void* task, UBaseType_t index, uint32_t ulBitsToClear) {
+	return ulTaskNotifyValueClearIndexed(task, index, ulBitsToClear);
+}
+
 #if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
 TaskHandle_t freertos_rs_get_current_task() {
 	return xTaskGetCurrentTaskHandle();

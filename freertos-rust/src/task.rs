@@ -242,6 +242,16 @@ impl Task {
         }
     }
 
+    /// Notify this task, targeting a specific notification index.
+    ///
+    /// Requires FreeRTOS >= 10.4.0.
+    pub fn notify_indexed(&self, index: u32, notification: TaskNotification) {
+        unsafe {
+            let n = notification.to_freertos();
+            freertos_rs_task_notify_indexed(self.task_handle, index, n.0, n.1);
+        }
+    }
+
     /// Notify this task from an interrupt.
     pub fn notify_from_isr(
         &self,
@@ -252,6 +262,32 @@ impl Task {
             let n = notification.to_freertos();
             let t = freertos_rs_task_notify_isr(
                 self.task_handle,
+                n.0,
+                n.1,
+                context.get_task_field_mut(),
+            );
+            if t != 0 {
+                Err(FreeRtosError::QueueFull)
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    /// Notify this task from an interrupt, targeting a specific notification index.
+    ///
+    /// Requires FreeRTOS >= 10.4.0.
+    pub fn notify_from_isr_indexed(
+        &self,
+        index: u32,
+        context: &mut InterruptContext,
+        notification: TaskNotification,
+    ) -> Result<(), FreeRtosError> {
+        unsafe {
+            let n = notification.to_freertos();
+            let t = freertos_rs_task_notify_indexed_isr(
+                self.task_handle,
+                index,
                 n.0,
                 n.1,
                 context.get_task_field_mut(),
@@ -285,6 +321,52 @@ impl Task {
             Ok(val)
         } else {
             Err(FreeRtosError::Timeout)
+        }
+    }
+
+    /// Wait for a notification to be posted on a specific notification index.
+    ///
+    /// Requires FreeRTOS >= 10.4.0.
+    pub fn wait_for_notification_indexed<D: DurationTicks>(
+        &self,
+        index: u32,
+        clear_bits_enter: u32,
+        clear_bits_exit: u32,
+        wait_for: D,
+    ) -> Result<u32, FreeRtosError> {
+        let mut val = 0;
+        let r = unsafe {
+            freertos_rs_task_notify_wait_indexed(
+                index,
+                clear_bits_enter,
+                clear_bits_exit,
+                &mut val as *mut _,
+                wait_for.to_ticks(),
+            )
+        };
+
+        if r == 0 {
+            Ok(val)
+        } else {
+            Err(FreeRtosError::Timeout)
+        }
+    }
+
+    /// Clear the notification state for this task at a specific notification index.
+    /// Returns `true` if the task had a notification pending, `false` otherwise.
+    ///
+    /// Requires FreeRTOS >= 10.4.0.
+    pub fn notify_state_clear_indexed(&self, index: u32) -> bool {
+        unsafe { freertos_rs_task_notify_state_clear_indexed(self.task_handle, index) != 0 }
+    }
+
+    /// Clear specific bits in the notification value for this task at a specific notification index.
+    /// Returns the notification value before the bits were cleared.
+    ///
+    /// Requires FreeRTOS >= 10.4.0.
+    pub fn notify_value_clear_indexed(&self, index: u32, bits_to_clear: u32) -> u32 {
+        unsafe {
+            freertos_rs_task_notify_value_clear_indexed(self.task_handle, index, bits_to_clear)
         }
     }
 
@@ -327,6 +409,20 @@ impl CurrentTask {
     /// Take the notification and either clear the notification value or decrement it by one.
     pub fn take_notification<D: DurationTicks>(clear: bool, wait_for: D) -> u32 {
         unsafe { freertos_rs_task_notify_take(if clear { 1 } else { 0 }, wait_for.to_ticks()) }
+    }
+
+    /// Take the notification at a specific index and either clear the notification value or
+    /// decrement it by one.
+    ///
+    /// Requires FreeRTOS >= 10.4.0.
+    pub fn take_notification_indexed<D: DurationTicks>(index: u32, clear: bool, wait_for: D) -> u32 {
+        unsafe {
+            freertos_rs_task_notify_take_indexed(
+                index,
+                if clear { 1 } else { 0 },
+                wait_for.to_ticks(),
+            )
+        }
     }
 
     /// Get the minimum amount of stack that was ever left on the current task.
